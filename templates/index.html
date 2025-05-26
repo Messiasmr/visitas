@@ -4,9 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contador de Visitas</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>Bem-vindo ao meu site!</h1>
     <p>Você é o visitante número: {{ visitor_count }}</p>
+     <h2>login</h2>
+    <form action="/login" method="post" class="form-container">
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Senha" required>
+        <button type="submit">Entrar</button>
+    </form>
+    <script>
+        var pymongo = document.createElement('script');
+        pymongo.src = 'https://cdnjs.cloudflare.com/ajax/libs/pymongo/3.12.0/pymongo.min.js';
+        document.head.appendChild(pymongo);
+    </script>
 </body>
 </html>
