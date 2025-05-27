@@ -65,5 +65,25 @@ def register_user():
     usuarios.insert_one({"email": email, "senha": senha})
     return "Usuário cadastrado com sucesso!"
 
+# Rota para exibir a página de login
+@app.route("/login", methods=["GET"])
+def login_page():
+    next_page = request.args.get("next", "/")
+    return render_template("login.html", next_page=next_page)
+
+# Rota para processar o login
+@app.route("/login", methods=["POST"])
+def login_user():
+    email = request.form.get("email")
+    senha = request.form.get("password")
+
+    # Verifica se o usuário existe no banco de dados
+    user = usuarios.find_one({"email": email, "senha": senha})
+    if user:
+        session["user"] = email
+        next_page = request.form.get("next", "/")
+        return redirect(next_page)
+    return "Credenciais inválidas", 401
+
 if __name__ == "__main__":
     app.run(debug=True)

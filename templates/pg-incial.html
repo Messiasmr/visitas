@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameFinder - Encontre os Melhores Preços</title>
+    <link rel="stylesheet" href="/static/style2.css">
+</head>
+<body>
+    <header>
+        <h1>GameFinder</h1>
+        <p>Encontre os melhores preços e avaliações para seus jogos favoritos</p>
+        <a href="/login">
+            <button type="button">Logar</button>
+        </a>
+    </header>
+    
+    <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Procure por um jogo...">
+        <button id="search-button">Buscar</button>
+    </div>
+    
+    <div class="games-container" id="games-container">
+        <!-- Os jogos serão carregados aqui dinamicamente -->
+        <div class="loading">Carregando jogos...</div>
+    </div>
+
+    <script>
+        // Variáveis globais
+        const API_KEY = 'SUA_CHAVE_DE_API'; // Obtenha uma key em https://rapidapi.com
+        const gamesContainer = document.getElementById('games-container');
+        const searchInput = document.getElementById('search-input');
+        const searchButton = document.getElementById('search-button');
+        
+        // Exemplo de dados (substitua pela chamada real da API)
+        const sampleGames = [
+            {
+                title: "The Witcher 3: Wild Hunt",
+                image: "https://image.api.playstation.com/vulcan/ap/rnd/202211/0711/kh4MUIuMmHlktOHar3lVl6rY.png",
+                metacritic: 92,
+                prices: [
+                    { store: "Steam", price: 79.90, link: "https://store.steampowered.com/app/292030" },
+                    { store: "Epic Games", price: 59.90, link: "https://store.epicgames.com/p/the-witcher-3-wild-hunt" },
+                    { store: "GOG", price: 49.90, link: "https://www.gog.com/game/the_witcher_3_wild_hunt" }
+                ]
+            },
+            {
+                title: "Red Dead Redemption 2",
+                image: "https://image.api.playstation.com/vulcan/ap/rnd/202010/0222/niMUubpU5AEvYbLg4FsJTYIH.png",
+                metacritic: 93,
+                prices: [
+                    { store: "Steam", price: 199.90, link: "https://store.steampowered.com/app/1174180" },
+                    { store: "Rockstar", price: 149.90, link: "https://www.rockstargames.com/reddeadredemption2" }
+                ]
+            }
+        ];
+        
+        // Função para carregar jogos (simulando API)
+        function loadGames(searchTerm = '') {
+            gamesContainer.innerHTML = '';
+            
+            // Filtra jogos se houver um termo de busca
+            const filteredGames = sampleGames.filter(game => 
+                game.title.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            
+            if (filteredGames.length === 0) {
+                gamesContainer.innerHTML = '<div class="loading">Nenhum jogo encontrado.</div>';
+                return;
+            }
+            
+            // Renderiza cada jogo
+            filteredGames.forEach(game => {
+                const bestPrice = Math.min(...game.prices.map(p => p.price));
+                const bestStore = game.prices.find(p => p.price === bestPrice);
+                
+                const gameCard = document.createElement('div');
+                gameCard.className = 'game-card';
+                gameCard.innerHTML = `
+                    <img src="${game.image}" alt="${game.title}" class="game-image">
+                    <div class="game-info">
+                        <h3 class="game-title">${game.title}</h3>
+                        <div class="metacritic-score">Metacritic: ${game.metacritic}</div>
+                        <div class="price-info">
+                            <span class="best-price">R$ ${bestPrice.toFixed(2)}</span>
+                            <span> na ${bestStore.store}</span>
+                        </div>
+                        <div class="stores">
+                            ${game.prices.map(price => `
+                                <a href="${price.link}" target="_blank" class="store-link">${price.store} (R$ ${price.price.toFixed(2)})</a>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                
+                gamesContainer.appendChild(gameCard);
+            });
+        }
+        
+        // Event Listeners
+        searchButton.addEventListener('click', () => {
+            loadGames(searchInput.value);
+        });
+        
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                loadGames(searchInput.value);
+            }
+        });
+        
+        // Carrega jogos ao iniciar
+        loadGames();
+        
+        // ===== INTEGRAÇÃO COM APIs REAIS =====
+        // Para implementação real, você precisará:
+        // 1. API de preços: CheapShark (https://www.cheapshark.com/api) ou IsThereAnyDeal
+        // 2. API do Metacritic: RapidAPI (https://rapidapi.com/contextualwebsearch/api/web-search)
+        // 3. Substituir sampleGames por chamadas fetch() às APIs
+    </script>
+</body>
+</html>

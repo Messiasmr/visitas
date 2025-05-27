@@ -12,6 +12,7 @@
     
     <h2>Login</h2>
     <form action="/login" method="post" class="form-container">
+        <input type="hidden" name="next" value="{{ next_page }}">
         <input type="email" name="email" placeholder="Email" required>
         <input type="password" name="password" placeholder="Senha" required>
         <button type="submit">Entrar</button>
