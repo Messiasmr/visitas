@@ -3,25 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contador de Visitas</title>
+    <title>Login - Mobilete Games</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <h1>Bem-vindo ao mobilete games</h1>
-    <p>Você é o visitante número: {{ visitor_count }}</p>
+    <header>
+        <h1>Bem-vindo ao Mobilete Games</h1>
+        <p>Você é o visitante número: {{ visitor_count }}</p>
+    </header>
     
-    <h2>Login</h2>
-    <form action="/login" method="post" class="form-container">
-        <input type="hidden" name="next" value="{{ next_page }}">
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" placeholder="Senha" required>
-        <button type="submit">Entrar</button>
-    </form>
+    <main>
+        <section>
+            <h2>Login</h2>
+            <form action="/login" method="post" class="form-container">
+                <input type="hidden" name="next" value="{{ next_page }}">
+                
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" placeholder="Digite seu email" required>
+                
+                <label for="password">Senha:</label>
+                <input type="password" id="password" name="password" placeholder="Digite sua senha" required>
+                
+                <button type="submit">Entrar</button>
+            </form>
+        </section>
 
-    <!-- Botão de Cadastro -->
-    <h2>Ou</h2>
-    <a href="/register">
-        <button type="button">Cadastrar-se</button>
-    </a>
+        <section>
+            <h2>Ou</h2>
+            <a href="/register">
+                <button type="button">Cadastrar-se</button>
+            </a>
+        </section>
+    </main>
 </body>
 </html>

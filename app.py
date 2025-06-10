@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session, url_for, request, redirect
+from flask import Flask, render_template, session, url_for, request, redirect, flash
 import os
 import pymongo
 from dotenv import load_dotenv
@@ -20,7 +20,7 @@ MONGO_URI = f"mongodb+srv://{MONGO_USER}:{MONGO_PASSWORD}@{MONGO_HOST}/?retryWri
 try:
     client = pymongo.MongoClient(MONGO_URI)
     db = client["visitas_db"]
-    usuarios = db["usuarios"]
+    users_collection = db["users"]
     print("Conexão com o MongoDB Atlas bem-sucedida!")
 except pymongo.errors.ConfigurationError as e:
     print("Erro de configuração:", e)
@@ -41,49 +41,52 @@ def increment_visitor_count():
         file.write(str(count))
     return count
 
-@app.route("/", methods=["GET"])
+@app.route("/")
 def home():
-    count = increment_visitor_count()
-    return render_template("index.html", visitor_count=count)
+    if "user" not in session:
+        return redirect(url_for("login"))
+    
+    visitor_count = increment_visitor_count()
+    games = [
+        {"name": "Jogo 1", "description": "Descrição do Jogo 1"},
+        {"name": "Jogo 2", "description": "Descrição do Jogo 2"},
+        {"name": "Jogo 3", "description": "Descrição do Jogo 3"},
+        {"name": "Jogo 4", "description": "Descrição do Jogo 4"},
+    ]
+    return render_template("index.html", visitor_count=visitor_count, games=games)
 
-# Rota para exibir o formulário de registro
-@app.route("/register", methods=["GET"])
-def register_page():
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
+        user = users_collection.find_one({"email": email, "password": password})
+        if user:
+            session["user"] = user["email"]
+            flash("Login realizado com sucesso!", "success")
+            return redirect(url_for("home"))
+        else:
+            flash("Email ou senha inválidos.", "danger")
+    return render_template("login.html")
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
+        if users_collection.find_one({"email": email}):
+            flash("Email já registrado.", "danger")
+        else:
+            users_collection.insert_one({"email": email, "password": password})
+            flash("Cadastro realizado com sucesso! Faça login.", "success")
+            return redirect(url_for("login"))
     return render_template("register.html")
 
-# Rota para processar o registro do usuário
-@app.route("/register", methods=["POST"])
-def register_user():
-    email = request.form.get("email")
-    senha = request.form.get("password")
-
-    # Verifica se o usuário já existe
-    if usuarios.find_one({"email": email}):
-        return "Usuário já cadastrado!", 400
-
-    # Insere o novo usuário no MongoDB
-    usuarios.insert_one({"email": email, "senha": senha})
-    return "Usuário cadastrado com sucesso!"
-
-# Rota para exibir a página de login
-@app.route("/login", methods=["GET"])
-def login_page():
-    next_page = request.args.get("next", "/")
-    return render_template("login.html", next_page=next_page)
-
-# Rota para processar o login
-@app.route("/login", methods=["POST"])
-def login_user():
-    email = request.form.get("email")
-    senha = request.form.get("password")
-
-    # Verifica se o usuário existe no banco de dados
-    user = usuarios.find_one({"email": email, "senha": senha})
-    if user:
-        session["user"] = email
-        next_page = request.form.get("next", "/")
-        return redirect(next_page)
-    return "Credenciais inválidas", 401
+@app.route("/logout")
+def logout():
+    session.pop("user", None)
+    flash("Você saiu da sua conta.", "info")
+    return redirect(url_for("login"))
 
 if __name__ == "__main__":
     app.run(debug=True)
