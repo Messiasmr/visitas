@@ -3,23 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro - Mobilete Games</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <title>Registro - The Mobilete Games</title>
+    <link rel="stylesheet" href="/static/style2.css">
 </head>
 <body>
     <header>
-        <h1>Cadastro</h1>
+        <h1>Registro</h1>
     </header>
     
     <main>
-        <form action="/register" method="post" class="form-container">
+        <form action="/register" method="post" enctype="multipart/form-data" class="form-container">
+            <label for="name">Nome:</label>
+            <input type="text" id="name" name="name" placeholder="Digite seu nome" required>
+            
             <label for="email">Email:</label>
             <input type="email" id="email" name="email" placeholder="Digite seu email" required>
             
             <label for="password">Senha:</label>
             <input type="password" id="password" name="password" placeholder="Digite sua senha" required>
             
-            <button type="submit">Cadastrar</button>
+            <label for="profile_picture">Foto de Perfil:</label>
+            <input type="file" id="profile_picture" name="profile_picture" accept="image/*">
+            
+            <button type="submit">Registrar</button>
         </form>
         <p>Já tem uma conta? <a href="/login">Faça login</a>.</p>
     </main>

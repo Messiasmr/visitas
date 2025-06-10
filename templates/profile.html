@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil - The mobilete Games</title>
+    <link rel="stylesheet" href="/static/style2.css">
+</head>
+<body>
+    <header>
+        <h1>Perfil do Usuário</h1>
+    </header>
+    
+    <main>
+        <div class="profile-container">
+            <h2>Nome: {{ user['name'] }}</h2>
+            <h3>Email: {{ user['email'] }}</h3>
+            {% if user['profile_picture'] %}
+                <img src="/{{ user['profile_picture'] }}" alt="Foto de Perfil" class="profile-picture">
+            {% else %}
+                <p>Sem foto de perfil</p>
+            {% endif %}
+            <a href="/logout"><button>Sair</button></a>
+        </div>
+    </main>
+</body>
+</html>
