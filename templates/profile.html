@@ -11,6 +11,16 @@
     <link href="https://community.fastly.steamstatic.com/public/css/globalv2.css" rel="stylesheet" type="text/css">
     <link href="https://community.fastly.steamstatic.com/public/css/skin_1/profilev2.css" rel="stylesheet" type="text/css">
     <link rel="stylesheet" href="/static/perfil.css">
+    {% if user['background_image'] %}
+        <style>
+            body {
+                background-image: url("/{{ user['background_image'] }}");
+                background-size: cover;
+                background-position: center;
+                background-attachment: fixed;
+            }
+        </style>
+    {% endif %}
 </head>
 <body class="flat_page profile_page has_profile_background MidnightTheme responsive_page">
     <div class="profile_header_bg">

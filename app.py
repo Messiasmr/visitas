@@ -238,5 +238,31 @@ def api_games():
         "count": data.get("count", 0)
     })
 
+# Certifique-se de ter uma pasta para uploads, por exemplo: static/uploads/backgrounds
+UPLOAD_FOLDER_BG = "static/uploads/backgrounds"
+os.makedirs(UPLOAD_FOLDER_BG, exist_ok=True)
+app.config["UPLOAD_FOLDER_BG"] = UPLOAD_FOLDER_BG
+
+@app.route("/update-background", methods=["POST"])
+def update_background():
+    if "user" not in session:
+        return redirect("/login")
+    user_email = session["user"]
+    user = usuarios.find_one({"email": user_email})
+    if not user:
+        return redirect("/login")
+
+    bg_file = request.files.get("bg_image")
+    if bg_file and bg_file.filename:
+        filename = secure_filename(bg_file.filename)
+        bg_path = os.path.join(app.config["UPLOAD_FOLDER_BG"], filename)
+        bg_file.save(bg_path)
+        # Salva o caminho relativo no banco
+        usuarios.update_one(
+            {"email": user_email},
+            {"$set": {"background_image": f"{UPLOAD_FOLDER_BG}/{filename}"}}
+        )
+    return redirect("/profile")
+
 if __name__ == "__main__":
     app.run(debug=True)
