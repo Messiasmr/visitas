@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GameStore - Sua Loja de Jogos Favorita</title>
+    <title>The Mobilete Games - Sua Loja de Jogos Favorita</title>
     <link rel="stylesheet" href="/static/style2.css">
+    <link rel="stylesheet" href="/static/pagination.css">
 </head>
 <body>
     <header>
@@ -16,7 +17,10 @@
             {% else %}
                 <a href="/login" class="login-link">Login</a>
             {% endif %}
-            <h1>GameStore</h1>
+            <!-- Nome da loja em itálico e clicável -->
+            <a href="/" class="store-title" style="text-decoration:none;">
+                <span style="font-style:italic; color:#a29bfe; font-size:2.2em;">The Mobilete Games</span>
+            </a>
         </div>
         <p>Encontre os melhores jogos e compre diretamente nas lojas oficiais</p>
     </header>
@@ -42,62 +46,34 @@
         const searchInput = document.getElementById('search-input');
         const searchButton = document.getElementById('search-button');
 
-        // Lista de 50 jogos reais
-        const sampleGames = [
-            { title: "The Witcher 3: Wild Hunt", image: "https://image.api.playstation.com/vulcan/ap/rnd/202211/0711/kh4MUIuMmHlktOHar3lVl6rY.png", metacritic: 92, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/292030" }] },
-            { title: "Red Dead Redemption 2", image: "https://cdn.akamai.steamstatic.com/steam/apps/1174180/header.jpg", metacritic: 93, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/1174180" }] },
-            { title: "Cyberpunk 2077", image: "https://cdn.akamai.steamstatic.com/steam/apps/1091500/header.jpg", metacritic: 86, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/1091500" }] },
-            { title: "Hollow Knight", image: "https://cdn.akamai.steamstatic.com/steam/apps/367520/header.jpg", metacritic: 90, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/367520" }] },
-            { title: "Celeste", image: "https://cdn.akamai.steamstatic.com/steam/apps/504230/header.jpg", metacritic: 94, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/504230" }] },
-            { title: "Dark Souls III", image: "https://cdn.akamai.steamstatic.com/steam/apps/374320/header.jpg", metacritic: 89, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/374320" }] },
-            { title: "Sekiro: Shadows Die Twice", image: "https://cdn.akamai.steamstatic.com/steam/apps/814380/header.jpg", metacritic: 91, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/814380" }] },
-            { title: "Elden Ring", image: "https://cdn.akamai.steamstatic.com/steam/apps/1245620/header.jpg", metacritic: 94, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/1245620" }] },
-            { title: "Stardew Valley", image: "https://cdn.akamai.steamstatic.com/steam/apps/413150/header.jpg", metacritic: 89, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/413150" }] },
-            { title: "Terraria", image: "https://cdn.akamai.steamstatic.com/steam/apps/105600/header.jpg", metacritic: 91, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/105600" }] },
-            { title: "Portal 2", image: "https://cdn.akamai.steamstatic.com/steam/apps/620/header.jpg", metacritic: 95, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/620" }] },
-            { title: "Half-Life 2", image: "https://cdn.akamai.steamstatic.com/steam/apps/220/header.jpg", metacritic: 96, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/220" }] },
-            { title: "DOOM Eternal", image: "https://cdn.akamai.steamstatic.com/steam/apps/782330/header.jpg", metacritic: 90, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/782330" }] },
-            { title: "The Elder Scrolls V: Skyrim", image: "https://cdn.akamai.steamstatic.com/steam/apps/72850/header.jpg", metacritic: 94, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/72850" }] },
-            { title: "Among Us", image: "https://cdn.akamai.steamstatic.com/steam/apps/945360/header.jpg", metacritic: 85, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/945360" }] },
-            { title: "Fall Guys", image: "https://cdn.akamai.steamstatic.com/steam/apps/1097150/header.jpg", metacritic: 80, storeLinks: [{ store: "Epic Games", url: "https://store.epicgames.com/p/fall-guys" }] },
-            { title: "Minecraft", image: "https://cdn2.steamstatic.com/steam/apps/91310/header.jpg", metacritic: 93, storeLinks: [{ store: "Minecraft", url: "https://www.minecraft.net/" }] },
-            { title: "The Sims 4", image: "https://cdn.akamai.steamstatic.com/steam/apps/1222670/header.jpg", metacritic: 70, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/1222670" }] },
-            { title: "FIFA 23", image: "https://cdn.akamai.steamstatic.com/steam/apps/1811260/header.jpg", metacritic: 78, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/1811260" }] },
-            { title: "Call of Duty: Modern Warfare II", image: "https://cdn.akamai.steamstatic.com/steam/apps/1938090/header.jpg", metacritic: 82, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/1938090" }] },
-            { title: "Apex Legends", image: "https://cdn.akamai.steamstatic.com/steam/apps/1172470/header.jpg", metacritic: 88, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/1172470" }] },
-            { title: "Valorant", image: "https://cdn2.steamstatic.com/steam/apps/91310/header.jpg", metacritic: 80, storeLinks: [{ store: "Riot Games", url: "https://playvalorant.com/" }] },
-            { title: "League of Legends", image: "https://cdn2.steamstatic.com/steam/apps/91310/header.jpg", metacritic: 78, storeLinks: [{ store: "Riot Games", url: "https://www.leagueoflegends.com/" }] },
-            { title: "Fortnite", image: "https://cdn2.steamstatic.com/steam/apps/91310/header.jpg", metacritic: 83, storeLinks: [{ store: "Epic Games", url: "https://store.epicgames.com/p/fortnite" }] },
-            { title: "Overwatch 2", image: "https://cdn2.steamstatic.com/steam/apps/91310/header.jpg", metacritic: 81, storeLinks: [{ store: "Blizzard", url: "https://playoverwatch.com/" }] },
-            { title: "PUBG: Battlegrounds", image: "https://cdn.akamai.steamstatic.com/steam/apps/578080/header.jpg", metacritic: 86, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/578080" }] },
-            { title: "Rocket League", image: "https://cdn.akamai.steamstatic.com/steam/apps/252950/header.jpg", metacritic: 90, storeLinks: [{ store: "Epic Games", url: "https://store.epicgames.com/p/rocket-league" }] },
-            { title: "GTA V", image: "https://cdn.akamai.steamstatic.com/steam/apps/271590/header.jpg", metacritic: 96, storeLinks: [{ store: "Steam", url: "https://store.steampowered.com/app/271590" }] },
-            { title: "Far Cry 6", image: "https://cdn.akamai.steamstatic.com/steam/apps/524220/header.jpg", metacritic: 75, storeLinks: [{ store: "Ubisoft", url: "https://store.ubi.com/" }] }
-        ];
-
-        const gamesPerPage = 10; // Número de jogos por página
+        const gamesPerPage = 24; // Agora mostra 24 jogos por página
         let currentPage = 1;
+        let totalGames = 0;
 
         // Função para carregar jogos
-        function loadGames(page = 1) {
-            gamesContainer.innerHTML = '';
-            const startIndex = (page - 1) * gamesPerPage;
-            const endIndex = startIndex + gamesPerPage;
-            const gamesToDisplay = sampleGames.slice(startIndex, endIndex);
+        async function loadGames(page = 1) {
+            gamesContainer.innerHTML = '<div class="loading">Carregando jogos...</div>';
+            const search = searchInput.value;
+            const response = await fetch(`/api/games?search=${encodeURIComponent(search)}&page=${page}`);
+            const data = await response.json();
+            const games = data.games;
+            totalGames = data.count;
 
-            if (gamesToDisplay.length === 0) {
+            gamesContainer.innerHTML = '';
+            if (!games.length) {
                 gamesContainer.innerHTML = '<div class="loading">Nenhum jogo encontrado.</div>';
+                pagination.innerHTML = '';
                 return;
             }
 
-            gamesToDisplay.forEach(game => {
+            games.forEach(game => {
                 const gameCard = document.createElement('div');
                 gameCard.className = 'game-card';
                 gameCard.innerHTML = `
                     <img src="${game.image}" alt="${game.title}" class="game-image">
                     <div class="game-info">
                         <h3 class="game-title">${game.title}</h3>
-                        <div class="metacritic-score">Metacritic: ${game.metacritic}</div>
+                        <div class="metacritic-score">Metacritic: ${game.metacritic || 'N/A'}</div>
                         <div class="store-links">
                             ${game.storeLinks.map(link => `
                                 <a href="${link.url}" target="_blank" class="store-link">
@@ -116,17 +92,70 @@
         // Função para gerar paginação
         function generatePagination() {
             pagination.innerHTML = '';
-            const totalPages = Math.ceil(sampleGames.length / gamesPerPage);
+            const totalPages = Math.ceil(totalGames / gamesPerPage);
 
-            for (let i = 1; i <= totalPages; i++) {
-                const pageButton = document.createElement('button');
-                pageButton.textContent = i;
-                pageButton.className = i === currentPage ? 'active' : '';
-                pageButton.addEventListener('click', () => {
-                    currentPage = i;
+            if (totalPages <= 1) return;
+
+            // Botão anterior
+            if (currentPage > 1) {
+                const prevBtn = document.createElement('button');
+                prevBtn.textContent = '<';
+                prevBtn.className = 'page-btn';
+                prevBtn.onclick = () => {
+                    currentPage--;
                     loadGames(currentPage);
-                });
-                pagination.appendChild(pageButton);
+                };
+                pagination.appendChild(prevBtn);
+            }
+
+            // Sempre mostra a primeira página
+            addPageButton(1);
+
+            // Reticências antes
+            if (currentPage > 4) {
+                const dots = document.createElement('span');
+                dots.textContent = '...';
+                dots.className = 'pagination-dots';
+                pagination.appendChild(dots);
+            }
+
+            // Páginas vizinhas
+            for (let i = Math.max(2, currentPage - 2); i <= Math.min(totalPages - 1, currentPage + 2); i++) {
+                addPageButton(i);
+            }
+
+            // Reticências depois
+            if (currentPage < totalPages - 3) {
+                const dots = document.createElement('span');
+                dots.textContent = '...';
+                dots.className = 'pagination-dots';
+                pagination.appendChild(dots);
+            }
+
+            // Sempre mostra a última página
+            if (totalPages > 1) addPageButton(totalPages);
+
+            // Botão próximo
+            if (currentPage < totalPages) {
+                const nextBtn = document.createElement('button');
+                nextBtn.textContent = '>';
+                nextBtn.className = 'page-btn';
+                nextBtn.onclick = () => {
+                    currentPage++;
+                    loadGames(currentPage);
+                };
+                pagination.appendChild(nextBtn);
+            }
+
+            function addPageButton(page) {
+                const btn = document.createElement('button');
+                btn.textContent = page;
+                btn.className = 'page-btn' + (page === currentPage ? ' active' : '');
+                btn.onclick = () => {
+                    currentPage = page;
+                    loadGames(currentPage);
+                };
+                pagination.appendChild(btn);
             }
         }
 

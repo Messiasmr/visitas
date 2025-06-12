@@ -3,6 +3,7 @@ from werkzeug.utils import secure_filename
 import os
 import pymongo
 from dotenv import load_dotenv
+import requests
 
 # Carrega as variáveis do arquivo .env
 load_dotenv()
@@ -76,7 +77,8 @@ def register():
 # Rota para a página de perfil
 @app.route("/profile")
 def profile():
-    user_email = session.get("user")
+    # Permite acessar o perfil de outro usuário via ?user=email
+    user_email = request.args.get("user") or session.get("user")
     if not user_email:
         return redirect("/login")
 
@@ -84,7 +86,8 @@ def profile():
     if not user:
         return redirect("/login")
 
-    return render_template("profile.html", user=user)
+    comments = list(db.comments.find({"profile_owner": user_email}))
+    return render_template("profile.html", user=user, comments=comments)
 
 # Rota para atualizar o nome do usuário
 @app.route("/update-name", methods=["POST"])
@@ -120,6 +123,120 @@ def login():
 def logout():
     session.clear()
     return redirect("/")
+
+# Rota para atualizar o perfil do usuário
+@app.route("/update-profile", methods=["POST"])
+def update_profile():
+    user_email = session.get("user")
+    if not user_email:
+        return redirect("/login")
+
+    user = usuarios.find_one({"email": user_email})
+    if not user:
+        return redirect("/login")
+
+    update_data = {}
+
+    # Atualiza foto de perfil
+    profile_picture = request.files.get("profile_picture")
+    if profile_picture and profile_picture.filename:
+        filename = secure_filename(profile_picture.filename)
+        profile_picture_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        profile_picture.save(profile_picture_path)
+        update_data["profile_picture"] = profile_picture_path
+
+    # Atualiza arte única
+    unique_art = request.files.get("unique_art")
+    if unique_art and unique_art.filename:
+        art_filename = secure_filename(unique_art.filename)
+        unique_art_path = os.path.join(app.config["UPLOAD_FOLDER"], art_filename)
+        unique_art.save(unique_art_path)
+        update_data["unique_art"] = unique_art_path
+
+    # Atualiza bio
+    bio = request.form.get("bio")
+    if bio is not None:
+        update_data["bio"] = bio
+
+    if update_data:
+        usuarios.update_one({"email": user_email}, {"$set": update_data})
+
+    return redirect("/profile")
+
+@app.route("/add-comment", methods=["POST"])
+def add_comment():
+    if "user" not in session:
+        return redirect("/login")
+    author_email = session["user"]
+    author = usuarios.find_one({"email": author_email})
+    author_name = author["name"] if author else "Anônimo"
+
+    profile_owner = request.form.get("profile_owner")
+    text = request.form.get("comment")
+
+    if not text or not profile_owner:
+        return redirect("/profile")
+
+    comment = {
+        "profile_owner": profile_owner,
+        "author_email": author_email,
+        "author_name": author_name,
+        "text": text
+    }
+    db.comments.insert_one(comment)
+    return redirect("/profile")
+
+@app.route("/add-friend", methods=["POST"])
+def add_friend():
+    if "user" not in session:
+        return redirect("/login")
+    user_email = session["user"]
+    friend_email = request.form.get("friend_email")
+
+    if not friend_email or friend_email == user_email:
+        return redirect(f"/profile?user={friend_email}")
+
+    # Adiciona o amigo se ainda não estiver na lista
+    usuarios.update_one(
+        {"email": user_email},
+        {"$addToSet": {"friends": friend_email}}
+    )
+    return redirect(f"/profile?user={friend_email}")
+
+import os
+from dotenv import load_dotenv
+import requests
+from flask import jsonify, request
+
+load_dotenv()
+
+RAWG_API_KEY = os.getenv("RAWG_API_KEY")
+
+@app.route("/api/games")
+def api_games():
+    search = request.args.get("search", "")
+    page = request.args.get("page", 1)
+    url = f"https://api.rawg.io/api/games?key={RAWG_API_KEY}&page_size=10&page={page}"
+    if search:
+        url += f"&search={search}"
+
+    response = requests.get(url)
+    data = response.json()
+    games = []
+    for game in data.get("results", []):
+        games.append({
+            "title": game["name"],
+            "image": game.get("background_image"),
+            "metacritic": game.get("metacritic"),
+            "storeLinks": [
+                {"store": "Steam", "url": f"https://store.steampowered.com/search/?term={game['name']}"}
+            ]
+        })
+    # Retorne também o total de jogos
+    return jsonify({
+        "games": games,
+        "count": data.get("count", 0)
+    })
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -1,27 +1,143 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="responsive DesktopUI">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfil - The mobilete Games</title>
-    <link rel="stylesheet" href="/static/style2.css">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Comunidade :: {{ user['name'] }}</title>
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link href="https://community.fastly.steamstatic.com/public/shared/css/motiva_sans.css" rel="stylesheet" type="text/css">
+    <link href="https://community.fastly.steamstatic.com/public/shared/css/buttons.css" rel="stylesheet" type="text/css">
+    <link href="https://community.fastly.steamstatic.com/public/shared/css/shared_global.css" rel="stylesheet" type="text/css">
+    <link href="https://community.fastly.steamstatic.com/public/css/globalv2.css" rel="stylesheet" type="text/css">
+    <link href="https://community.fastly.steamstatic.com/public/css/skin_1/profilev2.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="/static/perfil.css">
 </head>
-<body>
-    <header>
-        <h1>Perfil do Usuário</h1>
-    </header>
-    
-    <main>
-        <div class="profile-container">
-            <h2>Nome: {{ user['name'] }}</h2>
-            <h3>Email: {{ user['email'] }}</h3>
-            {% if user['profile_picture'] %}
-                <img src="/{{ user['profile_picture'] }}" alt="Foto de Perfil" class="profile-picture">
-            {% else %}
-                <p>Sem foto de perfil</p>
-            {% endif %}
-            <a href="/logout"><button>Sair</button></a>
+<body class="flat_page profile_page has_profile_background MidnightTheme responsive_page">
+    <div class="profile_header_bg">
+        <div class="profile_header_content">
+            <div class="profile_avatar">
+                {% if user['profile_picture'] %}
+                    <img src="/{{ user['profile_picture'] }}" alt="Foto de Perfil">
+                {% else %}
+                    <img src="https://community.cloudflare.steamstatic.com/public/images/avatars/ee/ee516b7c3d43b948efa027dc9d1fbff24696cd1_full.jpg" alt="Sem foto">
+                {% endif %}
+            </div>
+            <div style="flex:1;">
+                <div class="profile_persona">{{ user['name'] }}</div>
+                <div class="profile_level">
+                    <div>{{ user['level'] or 1 }}</div>
+                    <span>Nível</span>
+                </div>
+                <div class="profile_logout">
+                    <a href="/logout"><button>Sair</button></a>
+                </div>
+                <!-- Formulário para trocar foto de perfil, arte única e bio -->
+                <form action="/update-profile" method="post" enctype="multipart/form-data" class="profile_edit_form">
+                    <label>Mudar foto de perfil:</label>
+                    <input type="file" name="profile_picture"><br><br>
+                    <label>Adicionar arte única:</label>
+                    <input type="file" name="unique_art"><br><br>
+                    <label>Resumo/Bio:</label>
+                    <input type="text" name="bio" value="{{ user['bio'] or '' }}" maxlength="120" style="width:90%;"><br><br>
+                    <button type="submit">Atualizar</button>
+                </form>
+            </div>
         </div>
-    </main>
+    </div>
+
+    <!-- Exibir arte única se existir -->
+    {% if user['unique_art'] %}
+        <div class="art_section">
+            <h3 style="color:#fff;">Arte única</h3>
+            <img src="/{{ user['unique_art'] }}" alt="Arte única">
+        </div>
+    {% endif %}
+
+    <!-- Links rápidos -->
+    <div class="quick_links" style="margin-top:20px; text-align:center;">
+        <a href="#" >Jogos</a>
+        <a href="#">Amigos</a>
+        <a href="#">Inventário</a>
+    </div>
+
+    <!-- Bio -->
+    <div class="profile_bio" style="text-align:center;">
+        {{ user['bio'] or 'Adicione um resumo ao seu perfil.' }}
+    </div>
+
+    <!-- Insígnias -->
+    <div class="badges" style="margin-top:20px; text-align:center;">
+        <h4 style="color:#fff;">Insígnias</h4>
+        {% if user['badges'] %}
+            {% for badge in user['badges'] %}
+                <img src="/static/{{ badge }}.png" alt="Insígnia">
+            {% endfor %}
+        {% else %}
+            <img src="/static/badge1.png" alt="Insígnia">
+            <img src="/static/badge2.png" alt="Insígnia">
+        {% endif %}
+    </div>
+
+    <!-- Jogos favoritos/recentes -->
+    <div class="games_section">
+        <h4 style="color:#fff;">Jogos Favoritos</h4>
+        {% if user['games'] %}
+            {% for game in user['games'] %}
+                <div class="game_card">
+                    <img src="{{ game['cover'] }}" alt="{{ game['name'] }}">
+                    <span>{{ game['name'] }}</span>
+                </div>
+            {% endfor %}
+        {% else %}
+            <span style="color:#c7d5e0;">Nenhum jogo adicionado.</span>
+        {% endif %}
+    </div>
+
+    <!-- Amigos -->
+    <div class="friends_section">
+        <h4 style="color:#fff;">Amigos</h4>
+        {% if user['friends'] %}
+            {% for friend in user['friends'] %}
+                <div class="friend_card">
+                    <img src="/{{ friend['profile_picture'] or 'static/default_avatar.png' }}" alt="{{ friend['name'] }}">
+                    <span>{{ friend['name'] }}</span>
+                </div>
+            {% endfor %}
+        {% else %}
+            <span style="color:#c7d5e0;">Nenhum amigo adicionado.</span>
+        {% endif %}
+    </div>
+
+    <!-- Comentários no perfil -->
+    <div class="comments_section">
+        <h4 style="color:#fff;">Comentários</h4>
+        <form action="/add-comment" method="post" style="margin-bottom:20px;">
+            <input type="hidden" name="profile_owner" value="{{ user['email'] }}">
+            <input type="text" name="comment" placeholder="Deixe um comentário..." style="width:70%;">
+            <button type="submit">Comentar</button>
+        </form>
+        {% if comments %}
+            {% for comment in comments %}
+                <div class="comment">
+                    <span class="comment_author">{{ comment['author_name'] }}</span>: {{ comment['text'] }}
+                </div>
+            {% endfor %}
+        {% else %}
+            <span style="color:#c7d5e0;">Nenhum comentário ainda.</span>
+        {% endif %}
+    </div>
+
+    {% if user['email'] != session['user'] %}
+    <form action="/add-friend" method="post" style="margin-top:10px;">
+        <input type="hidden" name="friend_email" value="{{ user['email'] }}">
+        <button type="submit">Adicionar Amigo</button>
+    </form>
+    {% endif %}
+
+    <form action="/update-background" method="post" enctype="multipart/form-data" style="margin-top:12px;">
+        <label for="bg_image" style="color:#a29bfe;font-weight:bold;">Imagem de fundo:</label>
+        <input type="file" name="bg_image" id="bg_image" accept="image/*" style="margin-bottom:6px;">
+        <button type="submit" class="add-bg-btn">Adicionar imagem de fundo</button>
+    </form>
 </body>
 </html>
