@@ -5,6 +5,7 @@ import pymongo
 from dotenv import load_dotenv
 import requests
 import uuid
+from datetime import datetime
 
 # Carrega as variáveis do arquivo .env
 load_dotenv()
@@ -42,7 +43,10 @@ def home():
     user = None
     if user_email:
         user = usuarios.find_one({"email": user_email})
-    return render_template("index.html", user=user)
+    logged_user = None
+    if "user" in session:
+        logged_user = usuarios.find_one({"email": session["user"]})
+    return render_template("index.html", logged_user=logged_user, user=user)
 
 # Rota para a página de registro
 @app.route("/register", methods=["GET", "POST"])
@@ -102,13 +106,20 @@ def profile():
     # Busque amigos se quiser mostrar
     friend_ids = user.get("friends", [])
     friends = list(usuarios.find({"user_id": {"$in": friend_ids}}))
+
+    favorite_games = []
+    if user.get("favorite_games"):
+        # Supondo que você tem uma função para buscar os dados dos jogos pelo ID
+        favorite_games = buscar_jogos_por_ids(user["favorite_games"])
+
     return render_template(
         "profile.html",
         user=user,
         comments=comments,
         friends=friends,
         logged_user=logged_user,
-        usuarios=usuarios  # <-- Adicione esta linha!
+        usuarios=usuarios,  # <-- Adicione esta linha!
+        favorite_games=favorite_games
     )
 
 # Rota para atualizar o nome do usuário
@@ -124,26 +135,25 @@ def update_name():
     return jsonify({"message": "Nome atualizado com sucesso!"}), 200
 
 # Rota para login
+from flask import session
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        email = request.form.get("email")
-        password = request.form.get("password")
-
-        # Verifica as credenciais
+        email = request.form["email"]
+        password = request.form["password"]
         user = usuarios.find_one({"email": email, "password": password})
         if user:
-            session["user"] = email
+            session["user"] = email  # <-- Isso é essencial!
             return redirect("/")
         else:
-            return "Credenciais inválidas", 401
-
+            return render_template("login.html", error="Usuário ou senha inválidos")
     return render_template("login.html")
 
 # Rota para logout
 @app.route("/logout")
 def logout():
-    session.clear()
+    session.pop("user", None)
     return redirect("/")
 
 # Rota para atualizar o perfil do usuário
@@ -179,6 +189,14 @@ def update_profile():
     bio = request.form.get("bio")
     if bio is not None:
         update_data["bio"] = bio
+
+    # Atualiza imagem de fundo
+    bg_file = request.files.get("bg_image")
+    if bg_file and bg_file.filename:
+        filename = secure_filename(bg_file.filename)
+        bg_path = os.path.join(app.config["UPLOAD_FOLDER_BG"], filename)
+        bg_file.save(bg_path)
+        update_data["background_image"] = f"{UPLOAD_FOLDER_BG}/{filename}"
 
     if update_data:
         usuarios.update_one({"email": user_email}, {"$set": update_data})
@@ -364,6 +382,51 @@ for user in usuarios.find({"user_id": {"$exists": False}}):
         {"$set": {"user_id": str(uuid.uuid4())}}
     )
 print("Todos os usuários agora têm user_id.")
+
+@app.route("/toggle-favorite", methods=["POST"])
+def toggle_favorite():
+    if "user" not in session:
+        return redirect("/login")
+    user = usuarios.find_one({"email": session["user"]})
+    game_id = request.form.get("game_id")
+    if not user or not game_id:
+        return redirect("/")
+    if "favorite_games" not in user:
+        user["favorite_games"] = []
+    if game_id in user["favorite_games"]:
+        usuarios.update_one({"email": user["email"]}, {"$pull": {"favorite_games": game_id}})
+    else:
+        usuarios.update_one({"email": user["email"]}, {"$addToSet": {"favorite_games": game_id}})
+    return redirect(request.referrer or "/")
+
+# Exemplo de adicionar notificação
+@app.route("/add-notification", methods=["POST"])
+def add_notification():
+    if "user" not in session:
+        return redirect("/login")
+    user = usuarios.find_one({"email": session["user"]})
+    game_id = request.form.get("game_id")
+    game_name = request.form.get("game_name")
+    discount_percent = request.form.get("discount")
+
+    if not user or not game_id or not game_name or not discount_percent:
+        return redirect("/")
+
+    # Adiciona notificação
+    usuarios.update_one(
+        {"email": user["email"]},
+        {"$push": {"notifications": {
+            "type": "promo",
+            "game_id": game_id,
+            "game_name": game_name,
+            "discount": discount_percent,
+            "timestamp": datetime.utcnow()
+        }}}
+    )
+    return redirect(request.referrer or "/")
+
+def buscar_jogos_por_ids(ids):
+    return list(jogos.find({"id": {"$in": ids}}))
 
 if __name__ == "__main__":
     app.run(debug=True)

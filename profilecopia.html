@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="responsive DesktopUI">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Comunidade :: {{ user['name'] }}</title>
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link href="https://community.fastly.steamstatic.com/public/shared/css/motiva_sans.css" rel="stylesheet" type="text/css">
+    <link href="https://community.fastly.steamstatic.com/public/shared/css/buttons.css" rel="stylesheet" type="text/css">
+    <link href="https://community.fastly.steamstatic.com/public/shared/css/shared_global.css" rel="stylesheet" type="text/css">
+    <link href="https://community.fastly.steamstatic.com/public/css/globalv2.css" rel="stylesheet" type="text/css">
+    <link href="https://community.fastly.steamstatic.com/public/css/skin_1/profilev2.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="/static/perfil.css">
+    {% if user['background_image'] %}
+        <style>
+            body {
+                background-image: url("/{{ user['background_image'] }}");
+                background-size: cover;
+                background-position: center;
+                background-attachment: fixed;
+            }
+        </style>
+    {% endif %}
+</head>
+<body class="flat_page profile_page has_profile_background MidnightTheme responsive_page">
+    <a href="/" class="home-btn" style="display:flex;align-items:center;gap:8px;position:absolute;top:24px;left:32px;z-index:1000;">
+        <img src="/static/excitebike_logo.png" alt="Home" style="width:38px;height:38px;">
+    </a>
+    <div class="profile_header_bg">
+        <div class="profile_header_content">
+            <div style="display: flex; align-items: center; gap: 18px;">
+                <div class="profile_avatar">
+                    {% if user['profile_picture'] %}
+                        <img src="/{{ user['profile_picture'] }}" alt="Foto de Perfil">
+                    {% else %}
+                        <img src="https://community.cloudflare.steamstatic.com/public/images/avatars/ee/ee516b7c3d43b948efa027dc9d1fbff24696cd1_full.jpg" alt="Sem foto">
+                    {% endif %}
+                </div>
+                {% if logged_user and user['user_id'] == logged_user['user_id'] %}
+                <div style="position: relative;">
+                    <button id="toggle-add-friend-search"
+                        style="background: #6c5ce7; color: #fff; border: none; border-radius: 4px; padding: 7px 16px; cursor: pointer;">
+                        Adicionar Amigos
+                    </button>
+                    <div id="add-friend-search-box"
+                        style="display: none; position: absolute; top: 42px; left: 0; background: #1b2838; border-radius: 8px; box-shadow: 0 2px 12px rgba(44,44,84,0.13); width: 320px; max-width: 90vw; z-index: 100; padding: 18px;">
+                        <form id="user-search-form" style="margin-bottom: 10px;">
+                            <input type="text" id="user-search-input" placeholder="Buscar usuário por nome ou ID"
+                                style="padding:6px 12px; border-radius:4px; border:1px solid #6c5ce7; width: 80%;">
+                            <button type="submit"
+                                style="padding:6px 14px; border-radius:4px; border:none; background:#6c5ce7; color:#fff; cursor:pointer;">Buscar</button>
+                        </form>
+                        <div id="user-search-results" style="max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div style="flex:1;">
+                <div class="profile_persona">{{ user['name'] }}</div>
+                <div class="profile_level">
+                    <div>{{ user['level'] or 1 }}</div>
+                    <span>Nível</span>
+                </div>
+                <div class="profile_logout">
+                    {% if logged_user and user['user_id'] == logged_user['user_id'] %}
+                        <a href="/logout"><button>Sair</button></a>
+                    {% endif %}
+                </div>
+                <!-- Só mostra o formulário de edição se for o próprio usuário -->
+                {% if logged_user and user['user_id'] == logged_user['user_id'] %}
+                    <button id="show-edit-profile" style="margin-top:18px; background:#6c5ce7; color:#fff; border:none; border-radius:4px; padding:7px 18px; cursor:pointer;">Editar Perfil</button>
+                    <div id="edit-profile-box" style="display:none; margin-top:18px;">
+                        <form action="/update-profile" method="post" enctype="multipart/form-data" class="profile_edit_form">
+                            <label>Mudar foto de perfil:</label>
+                            <input type="file" name="profile_picture"><br><br>
+                            <label>Adicionar arte única:</label>
+                            <input type="file" name="unique_art"><br><br>
+                            <label>Resumo/Bio:</label>
+                            <input type="text" name="bio" value="{{ user['bio'] or '' }}" maxlength="120" style="width:90%;"><br><br>
+                            <label for="bg_image" style="color:#a29bfe;font-weight:bold;">Imagem de fundo:</label>
+                            <input type="file" name="bg_image" id="bg_image" accept="image/*" style="margin-bottom:6px;"><br><br>
+                            <button type="submit">Atualizar</button>
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Exibir arte única se existir -->
+    {% if user['unique_art'] %}
+        <div class="art_section">
+            <h3 style="color:#fff;">Arte única</h3>
+            <img src="/{{ user['unique_art'] }}" alt="Arte única">
+        </div>
+    {% endif %}
+
+    <!-- Links rápidos -->
+    <div class="quick_links" style="margin-top:20px; text-align:center;">
+        <a href="#" >Jogos</a>
+        <a href="#">Amigos</a>
+        <a href="#">Inventário</a>
+    </div>
+
+    <!-- Bio -->
+    <div class="profile_bio" style="text-align:center;">
+        {{ user['bio'] or 'Adicione um resumo ao seu perfil.' }}
+    </div>
+
+    <!-- Insígnias -->
+    <div class="badges" style="margin-top:20px; text-align:center;">
+        <h4 style="color:#fff;">Insígnias</h4>
+        {% if user['badges'] %}
+            {% for badge in user['badges'] %}
+                <img src="/static/{{ badge }}.png" alt="Insígnia">
+            {% endfor %}
+        {% else %}
+            <img src="/static/badge1.png" alt="Insígnia">
+            <img src="/static/badge2.png" alt="Insígnia">
+        {% endif %}
+    </div>
+
+    <!-- Jogos favoritos/recentes -->
+    <div class="games_section">
+        <h4 style="color:#fff;">Jogos Favoritos</h4>
+        {% if user['games'] %}
+            {% for game in user['games'] %}
+                <div class="game_card">
+                    <img src="{{ game['cover'] }}" alt="{{ game['name'] }}">
+                    <span>{{ game['name'] }}</span>
+                </div>
+            {% endfor %}
+        {% else %}
+            <span style="color:#c7d5e0;">Nenhum jogo adicionado.</span>
+        {% endif %}
+    </div>
+
+    <!-- Amigos -->
+    <div class="friends_section">
+        <h4 style="color:#fff;">Amigos</h4>
+        {% if friends %}
+            {% for friend in friends %}
+                <div class="friend_card">
+                    <img src="/{{ friend['profile_picture'] or 'static/default_avatar.png' }}" alt="{{ friend['name'] }}">
+                    <span>{{ friend['name'] }}</span>
+                </div>
+            {% endfor %}
+        {% else %}
+            <span style="color:#c7d5e0;">Nenhum amigo adicionado.</span>
+        {% endif %}
+    </div>
+
+    <!-- Comentários no perfil (sempre aberto para todos) -->
+    <div class="comments_section">
+        <h4 style="color:#fff;">Comentários</h4>
+        <form action="/add-comment" method="post" style="margin-bottom:20px;">
+            <input type="hidden" name="profile_owner" value="{{ user['email'] }}">
+            <input type="text" name="comment" placeholder="Deixe um comentário..." style="width:70%;">
+            <button type="submit">Comentar</button>
+        </form>
+        {% if comments %}
+            {% for comment in comments %}
+                <div class="comment">
+                    <span class="comment_author">{{ comment['author_name'] }}</span>: {{ comment['text'] }}
+                </div>
+            {% endfor %}
+        {% else %}
+            <span style="color:#c7d5e0;">Nenhum comentário ainda.</span>
+        {% endif %}
+    </div>
+
+    <!-- Botão de adicionar amigo só aparece se logado e não for o próprio perfil -->
+    {% if logged_user and user['user_id'] != logged_user['user_id'] %}
+        {% if logged_user['user_id'] in user.get('friend_requests', []) %}
+            <button disabled>Solicitação enviada</button>
+        {% elif user['user_id'] in logged_user.get('friends', []) %}
+            <button disabled>Já são amigos</button>
+        {% else %}
+            <form action="/send-friend-request" method="post" style="margin-top:10px;">
+                <input type="hidden" name="to_user_id" value="{{ user['user_id'] }}">
+                <button type="submit">Adicionar Amigo</button>
+            </form>
+        {% endif %}
+    {% endif %}
+
+    
+    <!-- Busca de usuários só para o próprio usuário -->
+    {% if logged_user and user['user_id'] == logged_user['user_id'] %}
+    <form id="user-search-form" style="margin:20px 0; text-align:center;">
+        <input type="text" id="user-search-input" placeholder="Buscar usuário por nome ou ID" style="padding:6px 12px; border-radius:4px; border:1px solid #6c5ce7;">
+        <button type="submit" style="padding:6px 14px; border-radius:4px; border:none; background:#6c5ce7; color:#fff; cursor:pointer;">Buscar</button>
+    </form>
+    <div id="user-search-results" style="text-align:center;"></div>
+    <script>
+    document.getElementById('user-search-form').onsubmit = async function(e) {
+        e.preventDefault();
+        const q = document.getElementById('user-search-input').value;
+        const res = await fetch(`/search-users?q=${encodeURIComponent(q)}`);
+        const users = await res.json();
+        const results = document.getElementById('user-search-results');
+        results.innerHTML = '';
+        if (users.length === 0) {
+            results.innerHTML = '<span style="color:#c7d5e0;">Nenhum usuário encontrado.</span>';
+            return;
+        }
+        users.forEach(u => {
+            results.innerHTML += `
+                <div style="margin:10px 0;">
+                    <img src="/${u.profile_picture || 'static/default_avatar.png'}" style="width:40px;height:40px;border-radius:50%;vertical-align:middle;">
+                    <span style="color:#a29bfe;font-weight:bold;margin:0 8px;">${u.name}</span>
+                    <span style="color:#b2bec3;">ID: ${u.user_id}</span>
+                    <a href="/profile?id=${u.user_id}" style="color:#6c5ce7;margin-left:10px;">Ver perfil</a>
+                </div>
+            `;
+        });
+    };
+    </script>
+    {% endif %}
+
+    <!-- Adicione este bloco ao lado do nível do perfil, dentro de .profile_header_content -->
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <div class="profile_level">
+            <div>{{ user['level'] or 1 }}</div>
+            <span>Nível</span>
+        </div>
+        {% if logged_user and user['user_id'] == logged_user['user_id'] %}
+        <div style="position: relative;">
+            <button id="toggle-add-friend-search"
+                style="background: #6c5ce7; color: #fff; border: none; border-radius: 4px; padding: 7px 16px; cursor: pointer;">
+                Adicionar Amigos
+            </button>
+            <div id="add-friend-search-box"
+                style="display: none; position: absolute; top: 42px; left: 0; background: #1b2838; border-radius: 8px; box-shadow: 0 2px 12px rgba(44,44,84,0.13); width: 320px; max-width: 90vw; z-index: 100; padding: 18px;">
+                <form id="user-search-form" style="margin-bottom: 10px;">
+                    <input type="text" id="user-search-input" placeholder="Buscar usuário por nome ou ID"
+                        style="padding:6px 12px; border-radius:4px; border:1px solid #6c5ce7; width: 80%;">
+                    <button type="submit"
+                        style="padding:6px 14px; border-radius:4px; border:none; background:#6c5ce7; color:#fff; cursor:pointer;">Buscar</button>
+                </form>
+                <div id="user-search-results" style="max-height: 200px; overflow-y: auto;"></div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    </div>
+
+    <!-- Bell icon and notifications dropdown -->
+    <div id="notification-bell-container">
+        <button id="notification-bell" style="background:transparent; border:none; cursor:pointer; position:relative;">
+            <span style="font-size:2em; color:#6c5ce7;">&#128276;</span>
+            {% if logged_user and user['user_id'] == logged_user['user_id'] and user.get('friend_requests') %}
+                <span id="notif-count" style="position:absolute;top:0;right:0;background:#e17055;color:#fff;border-radius:50%;font-size:0.8em;padding:2px 6px;">{{ user.friend_requests|length }}</span>
+            {% endif %}
+        </button>
+        <div id="notif-dropdown">
+            <h4 style="color:#fff; margin-top:0;">Solicitações de amizade</h4>
+            {% if logged_user and user['user_id'] == logged_user['user_id'] and user.get('friend_requests') %}
+                {% for req_id in user['friend_requests'] %}
+                    {% set req_user = usuarios.find_one({'user_id': req_id}) %}
+                    <div style="margin-bottom:12px; display:flex; align-items:center;">
+                        <img src="/{{ req_user['profile_picture'] or 'static/default_avatar.png' }}" style="width:36px;height:36px;border-radius:50%;margin-right:10px;">
+                        <span style="color:#a29bfe;flex:1;">{{ req_user['name'] if req_user else 'Usuário desconhecido' }}</span>
+                        <form action="/respond-friend-request" method="post" style="display:inline;">
+                            <input type="hidden" name="from_user_id" value="{{ req_id }}">
+                            <button name="action" value="accept" type="submit" style="margin-right:4px;">Aceitar</button>
+                            <button name="action" value="reject" type="submit">Recusar</button>
+                        </form>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <span style="color:#c7d5e0;">Nenhuma notificação.</span>
+            {% endif %}
+        </div>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const bell = document.getElementById('notification-bell');
+        const dropdown = document.getElementById('notif-dropdown');
+        if (bell && dropdown) {
+            bell.onclick = function(e) {
+                e.stopPropagation();
+                dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+            };
+            document.body.addEventListener('click', function() {
+                dropdown.style.display = 'none';
+            });
+            dropdown.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        }
+    });
+    </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const btn = document.getElementById('show-edit-profile');
+        const box = document.getElementById('edit-profile-box');
+        if (btn && box) {
+            btn.onclick = function() {
+                box.style.display = box.style.display === 'none' ? 'block' : 'none';
+                btn.textContent = box.style.display === 'block' ? 'Fechar edição' : 'Editar Perfil';
+            };
+        }
+    });
+    </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleBtn = document.getElementById('toggle-add-friend-search');
+        const searchBox = document.getElementById('add-friend-search-box');
+        if(toggleBtn && searchBox){
+            toggleBtn.onclick = function(e) {
+                e.stopPropagation();
+                searchBox.style.display = searchBox.style.display === 'block' ? 'none' : 'block';
+            };
+            document.body.addEventListener('click', function() {
+                searchBox.style.display = 'none';
+            });
+            searchBox.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+            document.getElementById('user-search-form').onsubmit = async function(e) {
+                e.preventDefault();
+                const q = document.getElementById('user-search-input').value;
+                const res = await fetch(`/search-users?q=${encodeURIComponent(q)}`);
+                const users = await res.json();
+                const results = document.getElementById('user-search-results');
+                results.innerHTML = '';
+                if (users.length === 0) {
+                    results.innerHTML = '<span style="color:#c7d5e0;">Nenhum usuário encontrado.</span>';
+                    return;
+                }
+                users.forEach(u => {
+                    results.innerHTML += `
+                        <div style="margin:10px 0; display:flex; align-items:center;">
+                            <img src="/${u.profile_picture || 'static/default_avatar.png'}" style="width:32px;height:32px;border-radius:50%;vertical-align:middle;margin-right:8px;">
+                            <span style="color:#a29bfe;font-weight:bold;margin:0 8px;">${u.name}</span>
+                            <span style="color:#b2bec3;font-size:0.95em;">ID: ${u.user_id}</span>
+                            <a href="/profile?id=${u.user_id}" style="color:#6c5ce7;margin-left:auto;">Ver perfil</a>
+                        </div>
+                    `;
+                });
+            };
+        }
+    });
+    </script>
+</body>
+</html>
