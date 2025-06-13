@@ -10,19 +10,22 @@
 <body>
     <header>
         <div class="header-container">
-            {% if user and user['profile_picture'] %}
-                <a href="/profile">
-                    <img src="/{{ user['profile_picture'] }}" alt="Foto de Perfil" class="profile-logo">
-                </a>
-            {% else %}
-                <a href="/login" class="login-link">Login</a>
-            {% endif %}
-            <!-- Nome da loja em itálico e clicável -->
-            <a href="/" class="store-title" style="text-decoration:none;">
+            <!-- Botão Home com logo -->
+            <a href="/" class="home-btn" style="display:flex;align-items:center;gap:8px;">
+                <img src="/static/excitebike_logo.png" alt="Home" style="width:38px;height:38px;">
+            </a>
+            <!-- Logo + Nome da loja -->
+            <a href="/" class="store-title" style="display:flex;align-items:center;text-decoration:none;">
+                <img src="/static/excitebike_logo.png" alt="Logo" style="width:38px;height:38px;margin-right:8px;">
                 <span style="font-style:italic; color:#a29bfe; font-size:2.2em;">The Mobilete Games</span>
             </a>
+            <!-- Botão Sair (Logout) -->
+            {% if logged_user %}
+                <a href="/logout" class="logout-btn" style="margin-left:auto;">
+                    <button style="background:#6c5ce7;color:#fff;border:none;border-radius:4px;padding:7px 18px;cursor:pointer;">Sair</button>
+                </a>
+            {% endif %}
         </div>
-        <p>Encontre os melhores jogos e compre diretamente nas lojas oficiais</p>
     </header>
     
     <div class="search-bar">

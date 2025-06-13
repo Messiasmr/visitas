@@ -4,6 +4,7 @@ import os
 import pymongo
 from dotenv import load_dotenv
 import requests
+import uuid
 
 # Carrega as variáveis do arquivo .env
 load_dotenv()
@@ -63,8 +64,11 @@ def register():
             profile_picture_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
             profile_picture.save(profile_picture_path)
 
+        user_id = str(uuid.uuid4())
+
         # Insere o novo usuário no MongoDB
         usuarios.insert_one({
+            "user_id": user_id,
             "name": name,
             "email": email,
             "password": password,
@@ -77,17 +81,35 @@ def register():
 # Rota para a página de perfil
 @app.route("/profile")
 def profile():
-    # Permite acessar o perfil de outro usuário via ?user=email
+    user_id = request.args.get("id")
     user_email = request.args.get("user") or session.get("user")
-    if not user_email:
-        return redirect("/login")
 
-    user = usuarios.find_one({"email": user_email})
+    if user_id:
+        user = usuarios.find_one({"user_id": user_id})
+    elif user_email:
+        user = usuarios.find_one({"email": user_email})
+    else:
+        user = None
+
     if not user:
-        return redirect("/login")
+        return "Perfil não encontrado", 404
 
-    comments = list(db.comments.find({"profile_owner": user_email}))
-    return render_template("profile.html", user=user, comments=comments)
+    # Se o usuário estiver logado, pega o email/id dele
+    logged_user_email = session.get("user")
+    logged_user = usuarios.find_one({"email": logged_user_email}) if logged_user_email else None
+
+    comments = list(db.comments.find({"profile_owner": user.get("email")}))
+    # Busque amigos se quiser mostrar
+    friend_ids = user.get("friends", [])
+    friends = list(usuarios.find({"user_id": {"$in": friend_ids}}))
+    return render_template(
+        "profile.html",
+        user=user,
+        comments=comments,
+        friends=friends,
+        logged_user=logged_user,
+        usuarios=usuarios  # <-- Adicione esta linha!
+    )
 
 # Rota para atualizar o nome do usuário
 @app.route("/update-name", methods=["POST"])
@@ -191,17 +213,63 @@ def add_friend():
     if "user" not in session:
         return redirect("/login")
     user_email = session["user"]
-    friend_email = request.form.get("friend_email")
+    friend_id = request.form.get("friend_id")
 
-    if not friend_email or friend_email == user_email:
-        return redirect(f"/profile?user={friend_email}")
+    if not friend_id:
+        return redirect("/profile")
+
+    # Busca o amigo pelo user_id
+    friend = usuarios.find_one({"user_id": friend_id})
+    if not friend or friend["email"] == user_email:
+        return redirect("/profile")
 
     # Adiciona o amigo se ainda não estiver na lista
     usuarios.update_one(
         {"email": user_email},
-        {"$addToSet": {"friends": friend_email}}
+        {"$addToSet": {"friends": friend_id}}
     )
-    return redirect(f"/profile?user={friend_email}")
+    return redirect(f"/profile?id={friend_id}")
+
+@app.route("/send-friend-request", methods=["POST"])
+def send_friend_request():
+    if "user" not in session:
+        return redirect("/login")
+    from_user = usuarios.find_one({"email": session["user"]})
+    to_user_id = request.form.get("to_user_id")
+    if not from_user or not to_user_id or from_user["user_id"] == to_user_id:
+        return redirect("/profile")
+    # Adiciona solicitação se ainda não enviada
+    usuarios.update_one(
+        {"user_id": to_user_id},
+        {"$addToSet": {"friend_requests": from_user["user_id"]}}
+    )
+    return redirect(f"/profile?id={to_user_id}")
+
+@app.route("/respond-friend-request", methods=["POST"])
+def respond_friend_request():
+    if "user" not in session:
+        return redirect("/login")
+    user = usuarios.find_one({"email": session["user"]})
+    from_user_id = request.form.get("from_user_id")
+    action = request.form.get("action")
+    if not user or not from_user_id or action not in ["accept", "reject"]:
+        return redirect("/profile")
+    # Remove solicitação
+    usuarios.update_one(
+        {"user_id": user["user_id"]},
+        {"$pull": {"friend_requests": from_user_id}}
+    )
+    if action == "accept":
+        # Adiciona cada um na lista de amigos do outro
+        usuarios.update_one(
+            {"user_id": user["user_id"]},
+            {"$addToSet": {"friends": from_user_id}}
+        )
+        usuarios.update_one(
+            {"user_id": from_user_id},
+            {"$addToSet": {"friends": user["user_id"]}}
+        )
+    return redirect("/profile")
 
 import os
 from dotenv import load_dotenv
@@ -263,6 +331,39 @@ def update_background():
             {"$set": {"background_image": f"{UPLOAD_FOLDER_BG}/{filename}"}}
         )
     return redirect("/profile")
+
+@app.route("/search-users")
+def search_users():
+    query = request.args.get("q", "").strip()
+    if not query:
+        return jsonify([])
+
+    # Busca por nome (case-insensitive) ou por user_id exato
+    users = list(usuarios.find({
+        "$or": [
+            {"name": {"$regex": query, "$options": "i"}},
+            {"user_id": query}
+        ]
+    }, {"password": 0}))  # Nunca envie a senha!
+
+    # Retorne apenas dados necessários
+    result = []
+    for user in users:
+        result.append({
+            "user_id": user.get("user_id"),
+            "name": user.get("name"),
+            "email": user.get("email"),
+            "profile_picture": user.get("profile_picture")
+        })
+    return jsonify(result)
+
+# Adiciona user_id para usuários existentes
+for user in usuarios.find({"user_id": {"$exists": False}}):
+    usuarios.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"user_id": str(uuid.uuid4())}}
+    )
+print("Todos os usuários agora têm user_id.")
 
 if __name__ == "__main__":
     app.run(debug=True)
